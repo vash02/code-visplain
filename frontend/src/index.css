@@ -1,0 +1,102 @@
+/* Basic reset to remove default margin and padding */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Body styling */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f4f4f4;
+  overflow: hidden; /* Prevent overflow when zooming */
+}
+
+/* Header styling */
+h1 {
+  color: #333;
+  font-size: 2rem;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* Button styling */
+button {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-top: 10px;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+/* Form styling */
+form {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+input[type="file"] {
+  margin-right: 10px;
+}
+
+/* Container for graph image */
+#graph-container {
+  width: 80%;
+  margin-top: 20px;
+  text-align: center;
+  position: relative;
+}
+
+/* Panzoom container to hold the zoomable graph image */
+#panzoom-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  position: relative;
+  max-width: 100%;
+  max-height: 80vh;
+}
+
+/* Image styling */
+.graph-image {
+  max-width: 100%;
+  height: auto;
+  transition: transform 0.3s ease-in-out;
+}
+
+/* Close button styling */
+#close-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background-color: rgba(255, 0, 0, 0.8);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  padding: 10px;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+#close-button:hover {
+  background-color: rgba(255, 0, 0, 1);
+}
+
+#close-button:focus {
+  outline: none;
+}

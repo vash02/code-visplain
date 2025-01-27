@@ -1,0 +1,8 @@
+Flask
+networkx
+matplotlib
+ollama
+langchain
+chromaDB
+requests
+streamlit
