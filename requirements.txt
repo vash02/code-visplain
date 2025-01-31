@@ -6,3 +6,4 @@ langchain
 chromaDB
 requests
 streamlit
+flask-cors

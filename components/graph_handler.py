@@ -65,7 +65,7 @@ class GraphHandler:
         Visualize the component graph using Matplotlib and NetworkX.
         Returns the image as a BytesIO object for Flask to send as a response.
         """
-        plt.figure(figsize=(12, 12))
+        plt.figure(figsize=(8, 8))
 
         # Define the node colors based on their type
         node_color_map = {
