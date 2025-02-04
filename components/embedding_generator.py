@@ -1,9 +1,11 @@
 from transformers import AutoTokenizer, AutoModel
 import torch
 
+import config
+
 
 class EmbeddingGenerator:
-    def __init__(self, model_name="microsoft/codebert-base"):
+    def __init__(self, model_name=config.EMBEDDING_MODEL_NAME):
         """
         Initialize the EmbeddingGenerator class with the pre-trained model and tokenizer.
         """
@@ -28,8 +30,9 @@ class EmbeddingGenerator:
     def generate_embeddings_batch(self, code_snippets):
         """
         Generate embeddings for a batch of code snippets.
+        Returns a dictionary mapping file names to embeddings.
         """
-        embeddings = []
-        for file_name, snippet in code_snippets:
-            embeddings.append((file_name, self.generate_embeddings(snippet)))
-        return embeddings
+        embeddings_dict = {}  # Store {filename: embedding}
+        for file_name, _, snippet in code_snippets:
+            embeddings_dict[file_name] = self.generate_embeddings(snippet)
+        return embeddings_dict

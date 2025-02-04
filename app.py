@@ -1,34 +1,34 @@
 import io
-
-from flask import Flask, render_template, request, jsonify, send_from_directory, send_file
-from flask_cors import CORS  # For CORS
+from flask import Flask, request, jsonify, send_from_directory, send_file
+from flask_cors import CORS  # Enable CORS for frontend
 import os
-import matplotlib
-from matplotlib import pyplot as plt
-
-matplotlib.use('Agg')  # Use Agg backend for non-GUI rendering
 import logging
+import matplotlib
+
+from components.llm_handler import LLMHandler
+from components.rag_handler import RAGHandler
 from components.repository import CodeRepository
 from components.analyzer import CodeAnalyzer
 from components.graph_handler import GraphHandler
 from components.embedding_generator import EmbeddingGenerator
 import config
+from components.summarizer import CodeSummarizer
 
-app = Flask(__name__, static_folder='frontend/build', static_url_path='/static')
+matplotlib.use('Agg')  # Use non-GUI backend
 
-# Enable CORS for all domains
-CORS(app)
+STATIC_FOLDER = "static"
+if not os.path.exists(STATIC_FOLDER):
+    os.makedirs(STATIC_FOLDER)
 
-# Setup logging to capture any issues
+app = Flask(__name__, static_folder=STATIC_FOLDER, static_url_path="/static")
+CORS(app)  # Enable CORS
+
 logging.basicConfig(level=logging.DEBUG)
 
-# Initialize components with config
+# Initialize components
 embedding_generator = EmbeddingGenerator()
 code_analyzer = CodeAnalyzer()
-
-# Initialize CodeRepository with GitHub token from config
 repo_token = config.GITHUB_TOKEN
-
 
 @app.route('/')
 def index():
@@ -37,103 +37,87 @@ def index():
 
 @app.route('/upload', methods=['POST'])
 def upload_code():
-    # Log the form data to check if it's coming through correctly
-    upload_option = request.form.get('uploadOption')  # Get selected option (file or repo)
+    """Handles file upload or repo-based extraction."""
+    upload_option = request.form.get('uploadOption')
     logging.debug(f"Upload option selected: {upload_option}")
 
     if upload_option == 'file':
-        # Case 1: File upload
-        if 'code_file' not in request.files:
-            logging.error("No file part")
-            return jsonify({"error": "No file part"})
+        file = request.files.get('code_file')
+        if not file or file.filename == '':
+            return jsonify({"error": "No valid file selected"})
 
-        file = request.files['code_file']
+        file_path = os.path.join('uploads', file.filename)
+        file.save(file_path)
 
-        if file.filename == '':
-            logging.error("No selected file")
-            return jsonify({"error": "No selected file"})
+        with open(file_path, 'r') as f:
+            file_content = f.read()
 
-        if file and allowed_file(file.filename):
-            # Save the file
-            file_path = os.path.join('uploads', file.filename)
-            file.save(file_path)
-
-            # Step 1: Read file content
-            with open(file_path, 'r') as f:
-                file_content = f.read()
-
-            # Step 2: Process the code
-            return process_code(file_content)
+        return process_code(file_content)
 
     elif upload_option == 'repo':
-        # Case 2: Repo details input
         repo_owner = request.form['repo_owner']
         repo_name = request.form['repo_name']
-
-        logging.debug(f"Received repo details: {repo_owner}, {repo_name}")
-
-        # Step 1: Fetch code from the repository using the provided details
         repo = CodeRepository(repo_owner, repo_name, repo_token)
-
-        # Step 2: Process the code
         return process_code(repo)
 
-    else:
-        logging.error(f"Invalid input option: {upload_option}")
-        return jsonify({"error": "Invalid input option selected"})
+    return jsonify({"error": "Invalid input option"})
 
 
 def process_code(repo):
+    """Processes code, generates embeddings, and builds Component Graph."""
     try:
-        # Generate embeddings for the code
         functions, classes, relations = repo.fetch_files_from_directory()
 
-        # Create the component graph based on extracted code
-        graph_handler = GraphHandler(functions, classes)
-        component_graph = graph_handler.create_component_graph()
+        # Generate embeddings
+        embeddings = embedding_generator.generate_embeddings_batch(repo)
 
-        # Generate the graph image as a stream
+        # Generate Component Graph
+        graph_handler = GraphHandler(functions=functions, classes=classes)
+        component_graph = graph_handler.create_graph()
+
+        # Generate Graph Image
         graph_img_stream = graph_handler.visualize_graph(component_graph)
 
-        # Save the image to the static folder for serving
-        image_path = os.path.join(app.static_folder, "generated_graph.png")
-        with open(image_path, "wb") as f:
+        graph_image_path = os.path.join(app.static_folder, "generated_graph.png")
+
+        # Save the image for frontend display
+        with open(graph_image_path, "wb") as f:
             f.write(graph_img_stream.getvalue())
 
         return jsonify({
-            "message": "Graph generated successfully",
+            "message": "Component Graph generated successfully",
             "visualization": "/static/generated_graph.png"
         })
-    except Exception as e:
-        return jsonify({"error": f"Error generating graph image: {str(e)}"})
 
-@app.route('/generate_graph')
-def generate_graph():
+    except Exception as e:
+        logging.error(f"Error processing code: {str(e)}")
+        return jsonify({"error": f"Error generating component graph: {str(e)}"})
+
+
+@app.route('/generate_repo_summary', methods=['POST'])
+def generate_repo_summary():
+    """API to generate structured repo summary and block diagram."""
     try:
-        # Generate the graph image stream
-        graph_img_stream = generate_graph_image()
+        if not request.is_json:
+            return jsonify({"error": "Request must be JSON"}), 415
 
-        # Send the image to the frontend
-        return send_file(graph_img_stream, mimetype='image/png', as_attachment=False, download_name='graph.png')
+        data = request.get_json()
+        repo_owner = data.get("repo_owner")
+        repo_name = data.get("repo_name")
+
+        if not repo_owner or not repo_name:
+            return jsonify({"error": "Repository details required"}), 400
+
+        repo = CodeRepository(repo_owner, repo_name, repo_token)
+        rag_handler = RAGHandler(embedding_generator)
+
+        summary_data = rag_handler.generate_sequential_summary(repo)
+
+        return jsonify(summary_data)
 
     except Exception as e:
-        return jsonify({"error": f"Error generating graph: {str(e)}"})
-
-
-def generate_graph_image():
-    # Example plot to verify
-    plt.figure(figsize=(12, 12))
-    plt.plot([1, 2, 3], [1, 4, 9], label="Sample Plot")
-    plt.title("Sample Graph")
-    plt.grid(True)
-    plt.legend()
-
-    # Save the plot to a BytesIO stream
-    img_stream = io.BytesIO()
-    plt.savefig(img_stream, format='png')
-    img_stream.seek(0)  # Rewind the stream to the start
-
-    return img_stream
+        logging.error(f"Error generating repo summary: {str(e)}")
+        return jsonify({"error": f"Error processing repo summary: {str(e)}"})
 
 def allowed_file(filename):
     allowed_extensions = {'py', 'txt', 'md'}
