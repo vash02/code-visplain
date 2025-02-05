@@ -1,13 +1,13 @@
 # 📌 Code-Visplain
 
-🚀 **Code-Visplain** is an AI-powered tool that **analyzes, summarizes, and visualizes** codebases. It helps developers understand the **execution flow, component interactions, and key parameters** in a structured and intuitive manner.
+🚀 **Code-Visplain** is an AI-powered tool that **analyzes, summarizes, and visualizes** codebases. It helps developers understand the **execution flow, component interactions, and key parameters** in a structured and intuitive manner particularly for AI model codebases.
 
 ## 🌟 Features
 - 🔷 **Component Graphs**: Shows **class-level relationships** within the repository.
 - 📊 **Block Diagrams**: High-level **execution flow visualization**.
 - 🤖 **AI-Powered Summaries**: Uses **LLaMA 3.2** to generate **detailed explanations**.
 - 🔄 **Execution Order Detection**: Uses **topological sorting** for function dependencies.
-- 🏗 **Supports GitHub Repositories & Local Files**.
+- 🏗 **Supports GitHub Repositories**.
 
 ---
 
@@ -116,3 +116,4 @@ This will start the backend on http://127.0.0.1:5000/.
 - 🔹 Improving determination of execution order 
 - 🔹 Improved dependency tracking across files
 - 🔹 Interactive UI for block diagram elements
+- 🔹 Using metadata files other than code files to enhance results
