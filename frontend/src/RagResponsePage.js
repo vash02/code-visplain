@@ -15,21 +15,26 @@ function RagResponsePage() {
 
       {/* ✅ Block Diagram */}
       {pipelineDiagram ? (
-          <div style={diagramContainerStyle}>
-              <h2 style={subHeaderStyle}>📊 Block Diagram</h2>
+          <div style={{
+              width: "100%",
+              maxWidth: "1400px", // ✅ Increased width for better fit
+              maxHeight: "600px", // ✅ Limit height for better visibility
+              overflowX: "auto", // ✅ Allow horizontal scrolling if diagram is too long
+              overflowY: "auto", // ✅ Allow vertical scrolling if diagram is too tall
+              border: "2px solid black",
+              padding: "10px",
+              backgroundColor: "#f9f9f9"
+          }}>
+              <h2 style={{textAlign: "center"}}>Block Diagram</h2>
               <img
-                  src={`http://127.0.0.1:5000${pipelineDiagram}`} // Ensure full path
+                  src={`http://127.0.0.1:5000${pipelineDiagram}`}
                   alt="Block Diagram"
-                  onError={(e) => {
-                      console.error("Error loading block diagram:", e.target.src);
-                      e.target.style.display = "none"; // Hide image if not found
-                  }}
+                  onError={(e) => (e.target.style.display = "none")}
                   style={{
-                      width: "100%",
-                      maxWidth: "800px",
-                      border: "2px solid black",
+                      width: "auto", // ✅ Maintain aspect ratio
+                      height: "100%", // ✅ Expand height for better visibility
                       display: "block",
-                      margin: "auto",
+                      margin: "auto"
                   }}
               />
           </div>
@@ -40,21 +45,21 @@ function RagResponsePage() {
         {/* ✅ File Summaries */}
         {Object.keys(fileSummaries).length > 0 ? (
             <div style={summaryContainerStyle}>
-                <h2 style={subHeaderStyle}>📜 File Summaries</h2>
+                <h2 style={subHeaderStyle}>📜 Component Summaries</h2>
                 {Object.entries(fileSummaries).map(([file, content], index) => (
                     <div key={index} style={summaryStyle}>
-                    <h3 style={{ color: "#007bff" }}>📌 {file}</h3>
-              <ReactMarkdown className="markdown-body" remarkPlugins={[remarkGfm]}>
-                {content}
-              </ReactMarkdown>
+                        <h3 style={{color: "#007bff"}}>📌 {file}</h3>
+                        <ReactMarkdown className="markdown-body" remarkPlugins={[remarkGfm]}>
+                            {content}
+                        </ReactMarkdown>
+                    </div>
+                ))}
             </div>
-          ))}
-        </div>
-      ) : (
-        <p>No summaries available.</p>
-      )}
+        ) : (
+            <p>No summaries available.</p>
+        )}
 
-      <button onClick={() => navigate("/")} style={buttonStyle}>⬅ Back to Home</button>
+        <button onClick={() => navigate("/")} style={buttonStyle}>⬅ Back to Home</button>
     </div>
   );
 }

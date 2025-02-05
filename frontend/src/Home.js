@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 function Home() {
@@ -7,20 +7,7 @@ function Home() {
   const [repoName, setRepoName] = useState("");
   const [uploadOption, setUploadOption] = useState("repo");
   const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState(0);
   const navigate = useNavigate();
-
-  // Simulate progress bar
-  useEffect(() => {
-    let interval;
-    if (loading) {
-      setProgress(0); // Reset progress
-      interval = setInterval(() => {
-        setProgress((prev) => (prev < 95 ? prev + 5 : prev)); // Max 95% until response
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [loading]);
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
@@ -72,7 +59,6 @@ function Home() {
       if (response.ok) {
         const data = await response.json();
         setLoading(false);
-        setProgress(100); // Complete progress bar
 
         if (graphType === "component") {
           navigate("/graph", { state: { graphUrl: data.visualization } });
@@ -82,89 +68,146 @@ function Home() {
       } else {
         alert("Error processing request.");
         setLoading(false);
-        setProgress(0);
       }
     } catch (error) {
       console.error("Error:", error);
       alert("Error during submission");
       setLoading(false);
-      setProgress(0);
     }
   };
 
   return (
-    <div style={{ textAlign: "center", padding: "30px" }}>
-      <h1>Upload Code File or Enter Repository Details</h1>
+    <div style={styles.container}>
+      {/* Title */}
+      <h1 style={styles.title}>Code Visplain</h1>
+      <p style={styles.subtitle}>Understand and visualize your AI code structure</p>
 
-      <form style={{ marginBottom: "20px" }}>
-        <label htmlFor="uploadOption">Select an option:</label>
+      {/* Upload Form */}
+      <div style={styles.formContainer}>
+        <label htmlFor="uploadOption" style={styles.label}>Select an option:</label>
         <select
           id="uploadOption"
           value={uploadOption}
           onChange={(e) => setUploadOption(e.target.value)}
-          style={{ marginLeft: "10px", padding: "5px" }}
+          style={styles.input}
         >
           <option value="file">Upload File</option>
           <option value="repo">Enter Repo Details</option>
         </select>
 
+        {/* File Upload Section */}
         {uploadOption === "file" && (
-          <div style={{ marginTop: "20px" }}>
-            <label htmlFor="code_file">Upload Code File:</label>
-            <input type="file" accept=".py,.txt,.md" onChange={handleFileChange} />
+          <div style={styles.uploadContainer}>
+            <label htmlFor="code_file" style={styles.label}>Upload Code File:</label>
+            <input type="file" accept=".py,.txt,.md" onChange={handleFileChange} style={styles.input} />
           </div>
         )}
 
+        {/* Repository Input Fields */}
         {uploadOption === "repo" && (
-          <div style={{ marginTop: "20px" }}>
-            <label htmlFor="repo_owner">Repository Owner:</label>
+          <div style={styles.inputContainer}>
+            <label htmlFor="repo_owner" style={styles.label}>Repository Owner:</label>
             <input
               type="text"
               placeholder="Enter Repo Owner"
               value={repoOwner}
               onChange={(e) => setRepoOwner(e.target.value)}
-              style={{ marginLeft: "10px", padding: "5px" }}
+              style={styles.input}
             />
-            <br />
-            <label htmlFor="repo_name">Repository Name:</label>
+            <label htmlFor="repo_name" style={styles.label}>Repository Name:</label>
             <input
               type="text"
               placeholder="Enter Repo Name"
               value={repoName}
               onChange={(e) => setRepoName(e.target.value)}
-              style={{ marginLeft: "10px", padding: "5px" }}
+              style={styles.input}
             />
           </div>
         )}
-      </form>
 
-      {/* ✅ Buttons for Graph and Summary Generation */}
-      {/*<button onClick={() => handleGenerateGraph("component")} style={buttonStyle}>Generate Component Graph</button>*/}
-      <button onClick={() => handleGenerateGraph("summary")} style={{ ...buttonStyle, background: "lightblue" }}>Generate Summary</button>
+        {/* Buttons */}
+        <button onClick={() => handleGenerateGraph("summary")} style={styles.button}>Generate Summary</button>
+      </div>
 
-      {/* ✅ Progress Bar */}
-      {loading && (
-        <div style={{ width: "100%", backgroundColor: "#ddd", height: "10px", marginTop: "20px", position: "relative" }}>
-          <div style={{
-            width: `${progress}%`,
-            height: "100%",
-            backgroundColor: "lightblue",
-            transition: "width 1s ease-in-out",
-          }}></div>
-        </div>
-      )}
+      {/* Loading Animation */}
+      {loading && <p style={styles.loadingText}>Processing request... Please wait</p>}
     </div>
   );
 }
 
-// ✅ Styles
-const buttonStyle = {
-  margin: "10px",
-  padding: "10px 20px",
-  background: "grey",
-  border: "none",
-  borderRadius: "8px",
-  cursor: "pointer",
+/* ✅ Styles Object for Dark Theme */
+const styles = {
+  container: {
+    textAlign: "center",
+    padding: "40px",
+    backgroundColor: "#121212",  // Dark Background
+    color: "white",
+    minHeight: "100vh",
+  },
+  title: {
+    fontSize: "3rem",
+    fontWeight: "bold",
+    marginBottom: "10px",
+    color: "#00d4ff", // Cyan Title
+  },
+  subtitle: {
+    fontSize: "1.2rem",
+    marginBottom: "30px",
+    color: "#bbb",
+  },
+  formContainer: {
+    backgroundColor: "#1e1e1e",
+    padding: "30px",
+    borderRadius: "12px",
+    boxShadow: "0px 4px 10px rgba(255, 255, 255, 0.1)",
+    display: "inline-block",
+    minWidth: "400px",
+  },
+  inputContainer: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+    marginTop: "20px",
+  },
+  uploadContainer: {
+    marginTop: "20px",
+  },
+  label: {
+    fontSize: "1rem",
+    fontWeight: "bold",
+    color: "#ddd",
+    display: "block",
+    marginBottom: "8px",
+  },
+  input: {
+    padding: "10px",
+    fontSize: "1rem",
+    borderRadius: "5px",
+    border: "1px solid #555",
+    backgroundColor: "#222",
+    color: "white",
+    width: "100%",
+  },
+  button: {
+    marginTop: "20px",
+    padding: "12px 24px",
+    fontSize: "1rem",
+    background: "#00d4ff",
+    color: "#000",
+    border: "none",
+    borderRadius: "8px",
+    cursor: "pointer",
+    fontWeight: "bold",
+    transition: "all 0.3s ease",
+  },
+  buttonHover: {
+    background: "#00a3cc",
+  },
+  loadingText: {
+    marginTop: "20px",
+    fontSize: "1.2rem",
+    color: "#ffcc00",
+  }
 };
 
 export default Home;

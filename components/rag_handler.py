@@ -34,11 +34,12 @@ class RAGHandler:
             component_graph = graph_handler.create_graph()
 
             # ✅ Extract only Python file nodes
-            file_nodes = [node for node in component_graph.nodes if node.endswith(".py")]
+            # file_nodes = [node for node in component_graph.nodes if node.endswith(".py")]
+            class_nodes = component_graph.nodes()
 
             # ✅ Perform topological sort to get execution order
             logging.info("Performing topological sort to determine execution order...")
-            execution_order = list(nx.topological_sort(component_graph.subgraph(file_nodes)))
+            execution_order = list(nx.topological_sort(component_graph.subgraph(class_nodes)))
 
             if not execution_order:
                 logging.error("Execution order is empty. Unable to generate block diagram.")
@@ -47,45 +48,51 @@ class RAGHandler:
             logging.info(f"Execution Order: {execution_order}")
 
             # ✅ Group functions by file
-            file_function_map = {}
-            for file_name, func_name, func_code in functions:
-                if file_name not in file_function_map:
-                    file_function_map[file_name] = []
-                file_function_map[file_name].append((func_name, func_code))
+            # file_function_map = {}
+            file_class_map = {}
+            class_code_map = {}
+            for file_name, class_name, class_code in classes:
+                if file_name not in file_class_map:
+                    file_class_map[file_name] = []
+                if class_name not in class_code_map:
+                    class_code_map[class_name] = []
+                file_class_map[file_name].append((class_name, class_code))
+                class_code_map[class_name].append((file_name, class_code))
 
             # ✅ Generate summaries **per file**
             file_summaries = {}
-            for file_name, functions in file_function_map.items():
-                function_texts = "\n\n".join(
-                    [f"Function: {func_name}\n```python\n{func_code}\n```" for func_name, func_code in functions]
+            for class_name, classes in class_code_map.items():
+                class_texts = "\n\n".join(
+                    [f"Class: {class_name}\n File: {file_name} \n ```python\n{class_code}\n```" for file_name, class_code in classes]
                 )
 
                 summary_prompt = f"""
                 You are an AI expert in Python code analysis. 
-                Summarize the following Python file with its key functions concisely:
+                Summarize the following Python class with its key functions concisely:
 
-                **File Name**: {file_name}
-                **Functions**:
-                {function_texts}
+                **Class Name**: {class_name}
+                **Classes**:
+                {class_texts}
 
                 Provide a structured summary explaining the overall purpose of this file, its key components, 
                 and any important parameters with values.
                 """
 
-                logging.info(f"Summarizing file: {file_name}")
+                logging.info(f"Summarizing class: {class_name}")
                 response = ollama.chat(model=config.LLM_MODEL_NAME,
                                        messages=[{"role": "user", "content": summary_prompt}])
                 file_summary = response["message"]["content"]
 
-                file_summaries[file_name] = file_summary
+                file_summaries[class_name] = file_summary
 
             # ✅ Generate Block Diagram Using Summaries
             logging.info("Generating block diagram...")
             diagram_path = self.create_block_diagram(execution_order, file_summaries)
-
+            print("--------------Execution order-----------", execution_order)
             return {
                 "file_summaries": file_summaries,
-                "pipeline_diagram": diagram_path
+                "pipeline_diagram": diagram_path,
+                "execution_order": execution_order
             }
 
         except Exception as e:
