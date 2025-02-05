@@ -28,85 +28,98 @@ class GraphHandler:
         else:
             raise ValueError("Insufficient data to generate a graph.")
 
+    import networkx as nx
+
     def _create_component_graph(self):
         """
-        Create a component graph where **classes** are nodes.
-        Functions inside a class do not appear separately.
-        If cycles exist, remove the lowest-weighted edge.
+        Create a hybrid component graph:
+        - If multiple classes exist, use **classes** as nodes.
+        - If mostly functions, use **functions** as nodes but group them logically.
+        - If a mix, combine both approaches.
         """
         G = nx.DiGraph()
 
-        # ✅ Step 1: Add class nodes
-        for file_name, class_name, _ in self.classes:
-            G.add_node(class_name, type='class')
+        num_classes = len(self.classes)
+        num_functions = len(self.functions)
 
-        # ✅ Step 2: Add edges based on function dependencies
-        for file_name, func_name, func_code in self.functions:
-            for file_name2, class_name, class_code in self.classes:
-                if class_name in func_code:  # ✅ If function references the class
-                    weight = func_code.count(class_name)  # ✅ Weight based on number of calls
-                    G.add_edge(class_name, func_name, weight=weight)
+        if num_classes > 1:  # ✅ Use class-based graph
+            for file_name, class_name, _ in self.classes:
+                G.add_node(class_name, type="class")
 
-        # ✅ Step 3: Detect and remove cycles
+            for file_name, func_name, func_code in self.functions:
+                for file_name2, class_name, class_code in self.classes:
+                    if class_name in func_code:
+                        weight = func_code.count(class_name)
+                        G.add_edge(class_name, func_name, weight=weight)
+
+        elif num_functions > 1:  # ✅ Use function-based graph if function-heavy
+            function_nodes = set()
+
+            for file_name, func_name, func_code in self.functions:
+                function_nodes.add(func_name)
+                G.add_node(func_name, type="function")
+
+            # ✅ Connect functions based on execution order inside a file
+            file_function_map = {}
+            for file_name, func_name, func_code in self.functions:
+                if file_name not in file_function_map:
+                    file_function_map[file_name] = []
+                file_function_map[file_name].append(func_name)
+
+            for file, funcs in file_function_map.items():
+                for i in range(len(funcs) - 1):
+                    G.add_edge(funcs[i], funcs[i + 1])
+
+        else:  # ✅ If a single class + some functions, mix both approaches
+            for file_name, class_name, _ in self.classes:
+                G.add_node(class_name, type="class")
+
+            for file_name, func_name, func_code in self.functions:
+                G.add_node(func_name, type="function")
+                for file_name2, class_name, class_code in self.classes:
+                    if class_name in func_code:
+                        G.add_edge(class_name, func_name)
+
+        # ✅ Handle cycles by removing the lowest-weighted edge
         try:
-            nx.find_cycle(G, orientation='original')
-            while True:  # ✅ Keep removing cycles until the graph is acyclic
-                try:
-                    cycle = nx.find_cycle(G, orientation='original')
-                    min_edge = min(cycle, key=lambda edge: G[edge[0]][edge[1]]["weight"])
-                    G.remove_edge(*min_edge)  # ✅ Remove the least-weighted edge
-                except nx.NetworkXNoCycle:
-                    break  # ✅ Exit when no cycles remain
+            cycle = nx.find_cycle(G, orientation="original")
+            while cycle:
+                min_weight_edge = min(cycle, key=lambda edge: G[edge[0]][edge[1]].get("weight", 1))
+                G.remove_edge(*min_weight_edge[:2])
+                cycle = nx.find_cycle(G, orientation="original")
         except nx.NetworkXNoCycle:
-            pass  # ✅ No cycles found, continue
+            pass  # No cycle found, continue
 
         return G
 
     # def _break_cycles(self, G):
     #     """
-    #     Detects cycles in the graph and removes edges to make it a DAG.
+    #     Detects cycles in the graph and removes the least weighted edge to make it a DAG.
     #     """
     #     cycles = list(nx.simple_cycles(G))
+    #
     #     for cycle in cycles:
     #         logging.warning(f"Cycle detected: {cycle}")
     #
-    #         # Remove one edge from the cycle (heuristic: remove last edge)
+    #         # Find the least weighted edge in the cycle
+    #         min_weight = float("inf")
+    #         edge_to_remove = None
+    #
     #         for i in range(len(cycle)):
-    #             if G.has_edge(cycle[i], cycle[(i + 1) % len(cycle)]):
-    #                 G.remove_edge(cycle[i], cycle[(i + 1) % len(cycle)])
-    #                 logging.warning(f"Removed edge: {cycle[i]} → {cycle[(i + 1) % len(cycle)]}")
-    #                 break  # Remove only one edge per cycle
+    #             u, v = cycle[i], cycle[(i + 1) % len(cycle)]  # Get edge in the cycle
+    #             weight = G[u][v].get("weight", 1)  # Default weight is 1 if not specified
+    #
+    #             if weight < min_weight:
+    #                 min_weight = weight
+    #                 edge_to_remove = (u, v)
+    #
+    #         # Remove the least weighted edge
+    #         if edge_to_remove:
+    #             G.remove_edge(*edge_to_remove)
+    #             logging.warning(
+    #                 f"Removed least weighted edge: {edge_to_remove[0]} → {edge_to_remove[1]} (weight={min_weight})")
     #
     #     return G
-
-    def _break_cycles(self, G):
-        """
-        Detects cycles in the graph and removes the least weighted edge to make it a DAG.
-        """
-        cycles = list(nx.simple_cycles(G))
-
-        for cycle in cycles:
-            logging.warning(f"Cycle detected: {cycle}")
-
-            # Find the least weighted edge in the cycle
-            min_weight = float("inf")
-            edge_to_remove = None
-
-            for i in range(len(cycle)):
-                u, v = cycle[i], cycle[(i + 1) % len(cycle)]  # Get edge in the cycle
-                weight = G[u][v].get("weight", 1)  # Default weight is 1 if not specified
-
-                if weight < min_weight:
-                    min_weight = weight
-                    edge_to_remove = (u, v)
-
-            # Remove the least weighted edge
-            if edge_to_remove:
-                G.remove_edge(*edge_to_remove)
-                logging.warning(
-                    f"Removed least weighted edge: {edge_to_remove[0]} → {edge_to_remove[1]} (weight={min_weight})")
-
-        return G
 
     def visualize_graph(self, G):
         """
