@@ -12,17 +12,6 @@
 
 ---
 
-## 📸 Screenshots
-
-### 🔷 **Sample Generated Block Diagram**
-![block_diagram.png](static%2Fblock_diagram.png)
-
-### 📄 **Sample Component Summaries**
-![Screenshot 2025-02-04 at 11.40.52 PM.png](..%2F..%2F..%2F..%2Fvar%2Ffolders%2Fq3%2Fmq53py8958ndz_blwtj161xm0000gn%2FT%2FTemporaryItems%2FNSIRD_screencaptureui_u6Qd1C%2FScreenshot%202025-02-04%20at%2011.40.52%E2%80%AFPM.png)
-
-
----
-
 ## 🛠 Tech Stack
 - 🔹 **Frontend**: React.js (Flask API Calls)
 - 🔹 **Backend**: Flask (Python)
