@@ -1,3 +1,4 @@
+[DEMO_VIDEO]https://github.com/vash02/code-visplain/blob/main/static/code_visplain_demo.mov
 # 📌 Code-Visplain
 
 🚀 **Code-Visplain** is an AI-powered tool that **analyzes, summarizes, and visualizes** codebases. It helps developers understand the **execution flow, component interactions, and key parameters** in a structured and intuitive manner particularly for AI model codebases.
