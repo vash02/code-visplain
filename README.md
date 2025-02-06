@@ -11,7 +11,15 @@
 - 🏗 **Supports GitHub Repositories**.
 
 ---
+## Screenshots
 
+- **Sample Block Diagram**
+<img width="1292" alt="Screenshot 2025-02-06 at 12 16 16 AM" src="https://github.com/user-attachments/assets/2053757e-097c-430c-b50b-eacb4e3afb0b" />
+
+- **Sample Component Summaries**
+<img width="1292" alt="Screenshot 2025-02-06 at 12 17 36 AM" src="https://github.com/user-attachments/assets/b7aaeb57-2053-426a-83b9-2b24ce25b0e1" />
+
+---
 ## 🛠 Tech Stack
 - 🔹 **Frontend**: React.js (Flask API Calls)
 - 🔹 **Backend**: Flask (Python)
